@@ -1,4 +1,4 @@
-/* Teensyduino Core Library
+ /* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
  * Copyright (c) 2017 PJRC.COM, LLC.
  *
@@ -216,7 +216,33 @@ void readOnscreenKeyboard() {
         cmdString[0] = 0;
     }
 }
+
+uint8_t func() {
+    return 69;
+}
+
 int main() {
+    Serial.begin(9600);
+    while (!Serial);
+
+    Serial.println("I'm alive lol");
+    delay(10);
+    uint8_t *func_data = (uint8_t*)(&func);
+    uint8_t *func_ram_data = malloc(20);
+    memcpy(func_ram_data, func_data, 20);
+    uint8_t (*func_in_ram)(void) = (uint8_t(*)(void))func_data;
+    //int ret = func_in_ram();
+    for (uint32_t i = 0; i < 10; i++) {
+        for (uint32_t j = 0; j < 8; j++) {
+            Serial.print(pgm_read_byte(func_data + i * 8 + j), HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+    }
+    Serial.println("done");
+    
+    while (true);
+/*
     cmdString[0] = 0;
 	u8g2.begin(); 
 	setupKeypad();
@@ -226,6 +252,6 @@ int main() {
         readKeypad();
         readOnscreenKeyboard();
         draw();
-    }
+    }*/
 }
 
