@@ -217,28 +217,45 @@ void readOnscreenKeyboard() {
     }
 }
 
-uint8_t func() {
+uint8_t func_data[] = {
+    0x04, 0xb0, 0x2d, 0xe5,
+    0x00, 0xb0, 0x8d, 0xe2,
+    0x45, 0x30, 0xa0, 0xe3,
+    0x03, 0x00, 0xa0, 0xe1,
+    0x00, 0xd0, 0x4b, 0xe2,
+    0x04, 0xb0, 0x9d, 0xe4,
+    0x1e, 0xff, 0x2f, 0xe1,
+    0x47, 0x43, 0x43, 0x3a,
+};
+
+
+uint8_t entry() {
     return 69;
 }
+
+const uint32_t base = 15624;
 
 int main() {
     Serial.begin(9600);
     while (!Serial);
 
     Serial.println("I'm alive lol");
-    delay(10);
-    uint8_t *func_data = (uint8_t*)(&func);
-    uint8_t *func_ram_data = malloc(20);
-    memcpy(func_ram_data, func_data, 20);
-    uint8_t (*func_in_ram)(void) = (uint8_t(*)(void))func_data;
-    //int ret = func_in_ram();
-    for (uint32_t i = 0; i < 10; i++) {
-        for (uint32_t j = 0; j < 8; j++) {
-            Serial.print(pgm_read_byte(func_data + i * 8 + j), HEX);
-            Serial.print(" ");
-        }
-        Serial.println();
+    uint8_t *func_ram_data = (uint8_t*)(base + 0x04);
+    Serial.printf("%lu %lu\r\n", func_ram_data, &entry);
+    Serial.flush();
+    for (uint8_t i = 0; i < 32; i++) {
+        //Serial.printf("%02x ", func_ram_data[i]); Serial.flush();
+        func_ram_data[i] = ((uint8_t*)(&entry))[i];
+        //Serial.printf("%02x %02x", func_ram_data[i], ((uint8_t*)(&entry))[i]); Serial.flush();
+        //Serial.println();
+        //Serial.flush();
+        //delay(1);
     }
+    
+    int (*func_in_ram)(void) = (int(*)(void))((uint32_t)func_ram_data | 0x1);
+    int ret = func_in_ram();
+    Serial.println(ret);
+    Serial.flush();
     Serial.println("done");
     
     while (true);
