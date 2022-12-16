@@ -1,108 +1,93 @@
- /* Teensyduino Core Library
- * http://www.pjrc.com/teensy/
- * Copyright (c) 2017 PJRC.COM, LLC.
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * 1. The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * 2. If the Software is incorporated into a build system that allows
- * selection among a list of target devices, then similar target
- * devices manufactured by PJRC.COM must be included in the list of
- * target devices and selectable in the same manner.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 #include <Arduino.h>
 #include <Wire.h>
 #include <U8g2lib.h>
 #include <main.h>
 #include <keypad.h>
-#include <spacetrash.h>
-
-U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+#include <stdint.h>
+#include <string.h>
+#include "../include/libs/ST7789_t3.h"
 
 void drawMainMenu() {
 
 }
 
-char keyboard[][10] = {
-    {'q','w','e','r','t','y','u','i','o','p'},
-    {'a','s','d','f','g','h','j','k','l',' '},
-    {' ','z','x','c','v','b','n','m','.',','},
+#define TFT_MOSI  11
+#define TFT_SCK   13
+#define TFT_DC   37
+#define TFT_CS   10
+#define TFT_RST  8
+ST7789_t3 tft = ST7789_t3(TFT_CS, TFT_DC, TFT_RST);
 
-    {'Q','W','E','R','T','Y','U','I','O','P'},
-    {'A','S','D','F','G','H','J','K','L',' '},
-    {'\'','Z','X','C','V','B','N','M','<','>'},
+// asm(".global pogger\npogger: .incbin \"limine.sys\"\n");
+// extern unsigned char pogger[];
 
-    {'1','2','3','4','5','6','7','8','9','0'},
-    {'(',')','+','-','*','/','_',';','!',' '},
-    {'<','>','?','|','&','^','%','~','#',':'},
+#define K_UP 0xF0
+#define K_RIGHT 0xF1
+#define K_DOWN 0xF2
+#define K_LEFT 0xF3
+#define K_CONTROL 0xF4
+#define K_SHIFT 0xF5
+#define K_SUPER 0xF6
+#define K_ALT 0xF7
+#define K_CAPS 0xF8
+#define K_HOME 0xF9
+#define K_END 0xFA
+#define K_PAGEUP 0xFB
+#define K_PAGEDOWN 0xF9
 
-    {'{','}','[',']',' ','$','\\','@','`',' '},
-    {' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-    {' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+uint8_t keyboard[] = {
+    ' ',  '\n', '\b', 'r',
+    'a',  'd',  'e',  's',
+    't',  'i',  'o',  'n',
+
+    'w',  'c',  'l',  'h',
+    'm',  'u',  'f',  'g',
+    'p',  'y',  'b',  'v',
+
+    '(',  ')',  '[',  ']',
+    '{',  '}',  '=',  ';',
+    '.',  ',',  '"',  ':',
+
+    0x1b,   K_UP,   K_CONTROL, K_SHIFT,
+    K_LEFT, ' ',    K_RIGHT,   K_CAPS,
+    '\t',   K_DOWN, K_HOME,    K_END,
+
+    'k',  'b',  'j',  'q',
+    'x',  'z',  ' ',  '\'',
+    '#',  '@',  '\\',  '~',
+
+    '0',  '1',  '2',  '3',
+    '4',  '5',  '6',  '7',
+    '8',  '9',  '_',  '!',
+
+    '<',  '>',  '+',  '-',
+    '^',  '?',  '/',  '*',
+    '%',  '|',  '$',  '&',
+
+    ' ',     ' ',   K_PAGEUP, K_PAGEDOWN,
+    ' ',     ' ',   ' ',      ' ',
+    K_SUPER, K_ALT, '`',      ' '
 };
 
-char keyboardString[][21] = {
-    "q w e r t y u i o p",
-    " a s d f g h j k l ",
-    "\" z x c v b n m . ,",
-
-    "Q W E R T Y U I O P",
-    " A S D F G H J K L ",
-    "' Z X C V B N M < >",
-
-    "1 2 3 4 5 6 7 8 9 0",
-    " ( ) + - * / _ ; ! ",
-    "< > ? | & ^ % ~ # :",
-
-    "{ } [ ]   $ \\ @ `  ",
-    "                   ",
-    "                   ",
-};
-
-uint8_t keyboardX = 0;
-uint8_t keyboardY = 0;
-uint8_t keyboardMod = 0;
-uint8_t maxScreenRows = 4;
+int caps = 0;
+int shift = 0;
+int ctrl = 0;
+uint8_t keyboard_mod = 0;
+const uint8_t maxScreenRows = 23;
 #define CMD_STRING_LEN 100
-char cmdString[CMD_STRING_LEN];
+char cmd_string[CMD_STRING_LEN];
 uint16_t currScreenPos = 0;
-#define KB_OFFSET_X 16
-#define KB_OFFSET_Y 48
-#define DELETE 255
-#define CHARS_PER_LINE 26
-char screenBuffer[CHARS_PER_LINE * 4];
-void drawKeyboard() {
-    for (int row = 0; row < 3; row++) {
-        u8g2.drawStr(KB_OFFSET_X, KB_OFFSET_Y + row * u8g2.getMaxCharHeight(), keyboardString[row + keyboardMod * 3]);
-    }
-    u8g2.drawFrame((keyboardX * u8g2.getMaxCharWidth()) * 2 - 1 + KB_OFFSET_X + u8g2.getMaxCharWidth() * (keyboardY % 2),
-                    keyboardY * u8g2.getMaxCharHeight() - u8g2.getMaxCharHeight() + KB_OFFSET_Y,
-                    u8g2.getMaxCharWidth() + 1, u8g2.getMaxCharHeight() + 1);
-}
+#define CHARS_PER_LINE 40
+char screenBuffer[CHARS_PER_LINE * maxScreenRows];
+Keypad pad;
 
 void scrollDown() {
     for (uint8_t i = 0; i < maxScreenRows; i++) {
         memcpy(screenBuffer + i * CHARS_PER_LINE, screenBuffer + (i + 1) * CHARS_PER_LINE, CHARS_PER_LINE);
     }
+    memset(screenBuffer + (maxScreenRows - 1) * CHARS_PER_LINE, 0, CHARS_PER_LINE);
     currScreenPos -= CHARS_PER_LINE;
+    tft.fillScreen(ST7735_BLACK);
 }
 
 void print(const char n) {
@@ -130,41 +115,27 @@ void print(const char * n) {
     }
     //strcpy(screenBuffer + currScreenPos, n);
     currScreenPos += copiedLen;
-        if (currScreenPos / CHARS_PER_LINE >= maxScreenRows) {
+    while (currScreenPos / CHARS_PER_LINE >= maxScreenRows) {
         scrollDown();
     }
 }
 
 void draw() {
-    u8g2.setFontDirection(0);
-    u8g2.setFontRefHeightAll();
-    u8g2.setFont(u8g2_font_5x7_tf);
-    u8g2.setDrawColor(1);
-    u8g2.firstPage();
-    do {
-        drawKeyboard();
-        for (uint8_t line = 0; line < maxScreenRows; line++) {
-            char buf[CHARS_PER_LINE + 1];
-            buf[CHARS_PER_LINE] = 0;
-            memcpy(buf, screenBuffer + line * CHARS_PER_LINE, CHARS_PER_LINE);
-            u8g2.drawStr(0, 10 * (line + 1), buf); 
+    // tft.fillScreen(ST7735_BLACK);
+    for (uint8_t line = 0; line < maxScreenRows; line++) {
+        for (int row = 0; row < CHARS_PER_LINE; row++) {
+            char c = screenBuffer[row + line * CHARS_PER_LINE];
+            if (c == 0 || c == ' ') {
+                continue;
+            }
+            tft.drawChar(row * 6, 10 * line, c, ST77XX_WHITE, ST77XX_BLACK, 1, 1);
         }
-    } while(u8g2.nextPage());
-}
-
-void inChar(char n) {
-    uint16_t len = strlen(cmdString);
-    if (n == DELETE) {
-        if (len > 0) {
-            cmdString[len - 1] = 0;
-            screenBuffer[--currScreenPos] = 0;
-        }
+    }
+    bool show_cursor = millis() / 500 % 2;
+    if (show_cursor) {
+        tft.drawChar((currScreenPos % CHARS_PER_LINE) * 6, (currScreenPos / CHARS_PER_LINE) * 10, '|', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
     } else {
-        if (len < CMD_STRING_LEN - 1) {
-            cmdString[len] = n;
-            cmdString[len + 1] = 0;
-            print(n);
-        }
+        tft.drawChar((currScreenPos % CHARS_PER_LINE) * 6, (currScreenPos / CHARS_PER_LINE) * 10, ' ', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
     }
 }
 
@@ -172,11 +143,57 @@ void prompt() {
     print('>');
 }
 
-void doCommand(char * n) {
+int strcnt(char *str, char c) {
+    int cnt = 0;
+    while (*str != 0) {
+        if (*str == c) cnt++;
+        str++;
+    }
+    return cnt;
+}
+
+void do_command(char * n) {
     print('\n');
-    if (strcmp(n, "st") == 0) {
-        spacetrashLoop();
-    } else if (strlen(n) == 0) {
+    int argc = strcnt(n, ' ') + 1;
+    char *argv[argc];
+    argv[0] = n;
+    int argpos = 1;
+    while (*n != 0) {
+        if (*n == ' ') {
+            *n = 0;
+            argv[argpos++] = n + 1;
+        }
+        n++;
+    }
+    if (strcmp(argv[0], "st") == 0) {
+        // spacetrashLoop(&pad);
+    } else if (strcmp(argv[0], "bat") == 0) {
+        print("Battery voltage: ");
+        int v = analogRead(A9);
+        float computed_voltage = ((float)v / 1024.0) * 5.202765957446808;
+        int truncated_voltage = computed_voltage * 100;
+        char str[6];
+        str[0] = '0'+ (truncated_voltage / 100) % 10;
+        str[1] = '.';
+        str[2] = '0' + (truncated_voltage / 10) % 10;
+        str[3] = '0' + truncated_voltage % 10;
+        str[4] = '\n';
+        str[5] = 0;
+        print(str);
+    } else if (strcmp(argv[0], "brightness") == 0) {
+        if (argc != 2) {
+            print("Usage: brightness <value>\n");
+        } else {
+            int b = atoi(argv[1]);
+            if (b < 1 || b > 255) {
+                print("Error: invalid brightness value. Must be int, 0 < brightness < 256\n");
+            } else {
+                analogWrite(7, b);
+            }
+        }
+    } else if (strcmp(argv[0], "kb") == 0) {
+        keypad_debug(&pad);
+    } else if (strlen(argv[0]) == 0) {
 
     } else {
         print("Command not found\n");
@@ -184,91 +201,102 @@ void doCommand(char * n) {
     prompt();
 }
 
-void readOnscreenKeyboard() {
-    keyboardMod = (keypad[2][0] & 0b1) | (keypad[2][2] & 0b1) << 1;
-    if (keypad[0][1] == 0b011) {
-        keyboardY--;
+void inChar(char n) {
+    uint16_t len = strlen(cmd_string);
+    if (n == '\b') {
+        if (len > 0) {
+            cmd_string[len - 1] = 0;
+            screenBuffer[--currScreenPos] = 0;
+        }
+    } else if (n == '\n') {
+        do_command(cmd_string);
+        cmd_string[0] = 0;
+    } else {
+        if (len < CMD_STRING_LEN - 1) {
+            cmd_string[len] = n;
+            cmd_string[len + 1] = 0;
+            print(n);
+        }
     }
-    if (keypad[2][1] == 0b011) {
-        keyboardY++;
-    }
+}
 
-    if (keypad[1][0] == 0b011) {
-        keyboardX--;
+void read_keyboard(Keypad *pad) {
+    keyboard_mod = 0;//(keypad[0][2] & 0b1) | (keypad[2][2] & 0b1) << 1;
+    int which_key = -1;
+    for (int i = 0; i < 12; i++) {
+        if (pad->buttons[i] & 0b100) {
+            which_key = i;
+            break;
+        }
     }
-
-    if (keypad[1][2] == 0b011) {
-        keyboardX++;
+    if (which_key == -1) {
+        return;
     }
     
-    if (keypad[1][1] == 0b011) {
-        inChar(keyboard[keyboardY + keyboardMod * 3][keyboardX]);
-    }
-    if (keypad[0][2] == 0b011) {
-        inChar(DELETE);
-    }
-    if (keypad[0][0] == 0b011) {
-        inChar(' ');
-    }
+    int left_mod =  pad->buttons[13] & 0b1;
+    int right_mod = pad->buttons[12] & 0b1;
 
-    if (keypad[3][0] == 0b011) {
-        doCommand(cmdString);
-        cmdString[0] = 0;
+    int keyboard_idx = which_key + ((left_mod << 1) | right_mod) * 12 + 48 * ((pad->buttons[which_key] & 0b1000) >> 3);
+    uint8_t in = keyboard[keyboard_idx];
+    
+    //mod key
+    if (in > 0xF0) {
+        if (in == K_CONTROL) {
+            ctrl = 1;
+        } else if (in == K_SHIFT) {
+            shift = 1;
+        } else if (in == K_CAPS) {
+            caps = !caps;
+        }
     }
+    inChar(in);
 }
-
-uint8_t func_data[] = {
-    0x04, 0xb0, 0x2d, 0xe5,
-    0x00, 0xb0, 0x8d, 0xe2,
-    0x45, 0x30, 0xa0, 0xe3,
-    0x03, 0x00, 0xa0, 0xe1,
-    0x00, 0xd0, 0x4b, 0xe2,
-    0x04, 0xb0, 0x9d, 0xe4,
-    0x1e, 0xff, 0x2f, 0xe1,
-    0x47, 0x43, 0x43, 0x3a,
-};
-
-
-uint8_t entry() {
-    return 69;
-}
-
-const uint32_t base = 15624;
 
 int main() {
-    Serial.begin(9600);
-    while (!Serial);
+    memset(&pad, 0, sizeof(pad));
+    cmd_string[0] = 0;
+    pinMode(7, OUTPUT);
+    analogWrite(7, 12);
+    tft.init(240, 240);
+    setup_keypad();
+    prompt();
 
-    Serial.println("I'm alive lol");
-    uint8_t *func_ram_data = (uint8_t*)(base + 0x04);
-    Serial.printf("%lu %lu\r\n", func_ram_data, &entry);
-    Serial.flush();
-    for (uint8_t i = 0; i < 32; i++) {
-        //Serial.printf("%02x ", func_ram_data[i]); Serial.flush();
-        func_ram_data[i] = ((uint8_t*)(&entry))[i];
-        //Serial.printf("%02x %02x", func_ram_data[i], ((uint8_t*)(&entry))[i]); Serial.flush();
-        //Serial.println();
-        //Serial.flush();
-        //delay(1);
-    }
-    
-    int (*func_in_ram)(void) = (int(*)(void))((uint32_t)func_ram_data | 0x1);
-    int ret = func_in_ram();
-    Serial.println(ret);
-    Serial.flush();
-    Serial.println("done");
-    
-    while (true);
-/*
-    cmdString[0] = 0;
-	u8g2.begin(); 
-	setupKeypad();
-	prompt();
+    tft.setRotation(2);
+    tft.setTextWrap(false);
+    tft.setTextSize(1);
+    tft.setTextColor(ST7735_WHITE);
+    tft.useFrameBuffer(true);
 
     while (true) {
-        readKeypad();
-        readOnscreenKeyboard();
+
+        read_keypad(&pad);
+
+        read_keyboard(&pad);
         draw();
-    }*/
+        if (!tft.asyncUpdateActive()) {
+            tft.updateScreenAsync();
+        }
+        // tft.waitUpdateAsyncComplete();
+/*
+        currScreenPos = 0;
+        for (int j = 0; j < 14; j++) {
+            bool newlvl = pad.buttons[j] & 0x1;
+            print(newlvl + '0');
+            print(' ');
+            if (j % 4 == 0) {
+                print('\n');
+            }
+        }
+        draw();*/
+    }
 }
 
+// #include <Arduino.h>
+// void setup();
+// void loop();
+// int main() {
+//     setup();
+//     while (1) {
+//         loop();
+//     }
+// }

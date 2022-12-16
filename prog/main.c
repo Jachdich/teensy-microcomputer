@@ -1,6 +1,7 @@
-unsigned char get_thing() {
-    return 42;
+int some_other_func(int a) {
+    return a * 3;
 }
-unsigned char entry() {
-    return get_thing();
+asm(".global _start");
+int _start() {
+    return 69;//some_other_func(3);
 }

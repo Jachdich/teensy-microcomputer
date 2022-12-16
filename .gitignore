@@ -3,9 +3,9 @@ Blink.cc
 e
 debug
 imxrt*
-include/libs
+# include/libs
 libs
-src/libs
+# src/libs
 log.txt
 main.elf
 main.hex

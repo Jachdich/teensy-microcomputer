@@ -1,1 +1,1 @@
-main.elf: main.c
+main.o: main.c

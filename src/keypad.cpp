@@ -1,43 +1,46 @@
-#include <keypad.h>
-#include <Arduino.h>
+#include "../include/keypad.h" 
+#include "../include/libs/Arduino.h"
 
-unsigned char keypadPins[4][3] = {
-{30, 29, 27},
-{28, 33, 31},
-{36, 32, 38},
-{35, 34, 37}, 
+const unsigned char keypad_pins[NUM_KEYS] = {
+    27, 31, 38, 26,
+    29, 28, 32, 34,
+    30, 33, 36, 35,
+    22, 2
 };
+
+
 
 char calcKeypad[4][3] {
-	"789",
-	"456",
-	"123",
-	"0  "
+    "789",
+    "456",
+    "123",
+    "0  "
 };
 
-unsigned char keypad[4][3];
-
-void setupKeypad() {
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 3; j++) {
-			pinMode(keypadPins[i][j], INPUT_PULLUP);
-		}
-	}
+void setup_keypad() {
+    for (int i = 0; i < NUM_KEYS; i++) {
+        pinMode(keypad_pins[i], INPUT_PULLUP);
+    }
 }
 
-bool readKeypad() {
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 3; j++) {
-			bool lvl = (keypad[i][j] & 0x1);
-			//bool chg = (keypad[i][j] & 0x1 << 1) >> 1;
-			bool newLvl = !digitalReadFast(keypadPins[i][j]);
-			bool rising = (lvl != newLvl) && newLvl;
-			bool falling = (lvl != newLvl) && (!newLvl);
-			keypad[i][j] = falling << 2 | rising << 1 | newLvl;
-		}
-	}
-    if (keypad[0][2] == 0b001) {
-        return true;
+void read_keypad(Keypad *pad) {
+    for (int i = 0; i < NUM_KEYS; i++) {
+        bool lvl = (pad->buttons[i] & 0x1);
+        int elapsed = millis() - pad->times[i];
+        bool is_long = elapsed > 400;
+        bool new_lvl = !digitalReadFast(keypad_pins[i]);
+        bool rising = (lvl != new_lvl) && new_lvl;
+        bool falling = (lvl != new_lvl) && (!new_lvl);
+        if (rising) {
+            pad->times[i] = millis();
+        }
+        pad->buttons[i] = is_long << 3 | falling << 2 | rising << 1 | new_lvl;
     }
-    return false;
+}
+
+void keypad_debug(Keypad *pad) {
+    for (int i = 0; i < NUM_KEYS; i++) {
+        print(pad->buttons[i] & 0x1 ? '1' : '0');
+    }
+    print('\n');
 }

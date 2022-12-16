@@ -1453,14 +1453,13 @@ void st_Step(uint8_t player_pos, uint8_t is_auto_fire, uint8_t is_fire)
 uint8_t a;
 uint8_t b;
 uint8_t y = 128;
-
-
+#include "../include/keypad.h"
 //namespace SpaceTrash {
 	void spacetrashSetup(void) {
 
 	}
 
-	void spacetrashLoop(void) {
+	void spacetrashLoop(Keypad *pad) {
 	  u8g2.setFont(u8g2_font_6x10_tr);
 	  u8g2.setFontDirection(0);
 	  u8g2.setFontRefHeightAll();
@@ -1468,29 +1467,29 @@ uint8_t y = 128;
 	  st_Setup(u8g2.getU8g2());
 	  for(;;)
 	  {
-	  	bool should_exit = readKeypad();
-	  	if (keypad[0][0] == 0b011) {
+	  	read_keypad(pad);
+	  	if (pad->buttons[0] == 0b0011) {
 	  	    do {
-	  	        readKeypad();
-	  	    } while (keypad[0][0] != 0b011);
+	  	        read_keypad(pad);
+	  	    } while (pad->buttons[0] != 0b0011);
 	  	}
-	  	if (should_exit) return;
-	    st_Step(y, /* is_auto_fire */ 0, /* is_fire */ keypad[3][0] & 0x1);
+	  	if (pad->buttons[2] == 0b0011) return;
+	    st_Step(y, 0, pad->buttons[8] & 0x1);
 	    u8g2.firstPage();
 	    do
 	    {
 	      st_Draw(0);
 	    } while( u8g2.nextPage() );
 	    
-	    if (keypad[3][2] == 0b011) {
+	    if ((pad->buttons[11] & 0b111) == 0b011) {
 	        y--;
-	    } else if (keypad[3][2] == 0b001) {
+	    } else if ((pad->buttons[11] & 0b111) == 0b001) {
 	    	y -= 2;
 	    }
 	    
-	    if (keypad[2][2] == 0b011) {
+	    if ((pad->buttons[7] & 0b111) == 0b011) {
 	        y++;
-	    } else if (keypad[2][2] == 0b001) {
+	    } else if ((pad->buttons[7] & 0b111) == 0b001) {
 	    	y += 2;
 	    }
 	  }
