@@ -8,15 +8,6 @@ const unsigned char keypad_pins[NUM_KEYS] = {
     22, 2
 };
 
-
-
-char calcKeypad[4][3] {
-    "789",
-    "456",
-    "123",
-    "0  "
-};
-
 void setup_keypad() {
     for (int i = 0; i < NUM_KEYS; i++) {
         pinMode(keypad_pins[i], INPUT_PULLUP);

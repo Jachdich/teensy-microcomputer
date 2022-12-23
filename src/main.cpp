@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "../include/libs/ST7789_t3.h"
+#include "minesweeper.h"
 
 void drawMainMenu() {
 
@@ -69,6 +70,10 @@ uint8_t keyboard[] = {
     K_SUPER, K_ALT, '`',      ' '
 };
 
+typedef struct {
+    int x, y;
+} Vec2;
+
 int caps = 0;
 int shift = 0;
 int ctrl = 0;
@@ -80,6 +85,7 @@ uint16_t currScreenPos = 0;
 #define CHARS_PER_LINE 40
 char screenBuffer[CHARS_PER_LINE * maxScreenRows];
 Keypad pad;
+Vec2 last_cursor_pos = {1, 0};
 
 void scrollDown() {
     for (uint8_t i = 0; i < maxScreenRows; i++) {
@@ -122,6 +128,11 @@ void print(const char * n) {
 
 void draw() {
     // tft.fillScreen(ST7735_BLACK);
+
+    bool show_cursor = millis() / 500 % 2;
+    Vec2 cursor_pos = (Vec2){(currScreenPos % CHARS_PER_LINE) * 6, (currScreenPos / CHARS_PER_LINE) * 10};
+    tft.drawChar(last_cursor_pos.x, last_cursor_pos.y, ' ', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
+    
     for (uint8_t line = 0; line < maxScreenRows; line++) {
         for (int row = 0; row < CHARS_PER_LINE; row++) {
             char c = screenBuffer[row + line * CHARS_PER_LINE];
@@ -131,11 +142,9 @@ void draw() {
             tft.drawChar(row * 6, 10 * line, c, ST77XX_WHITE, ST77XX_BLACK, 1, 1);
         }
     }
-    bool show_cursor = millis() / 500 % 2;
     if (show_cursor) {
-        tft.drawChar((currScreenPos % CHARS_PER_LINE) * 6, (currScreenPos / CHARS_PER_LINE) * 10, '|', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
-    } else {
-        tft.drawChar((currScreenPos % CHARS_PER_LINE) * 6, (currScreenPos / CHARS_PER_LINE) * 10, ' ', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
+        tft.drawChar(cursor_pos.x, cursor_pos.y, '|', ST77XX_WHITE, ST77XX_BLACK, 1, 1);
+        last_cursor_pos = cursor_pos;
     }
 }
 
@@ -193,6 +202,8 @@ void do_command(char * n) {
         }
     } else if (strcmp(argv[0], "kb") == 0) {
         keypad_debug(&pad);
+    } else if (strcmp(argv[0], "ms") == 0) {
+        minesweeper(&pad, &tft);
     } else if (strlen(argv[0]) == 0) {
 
     } else {
@@ -256,7 +267,7 @@ int main() {
     memset(&pad, 0, sizeof(pad));
     cmd_string[0] = 0;
     pinMode(7, OUTPUT);
-    analogWrite(7, 12);
+    analogWrite(7, 255);
     tft.init(240, 240);
     setup_keypad();
     prompt();
@@ -269,10 +280,11 @@ int main() {
 
     while (true) {
 
-        read_keypad(&pad);
+        // read_keypad(&pad);
 
-        read_keyboard(&pad);
-        draw();
+        // read_keyboard(&pad);
+        // draw();
+        minesweeper(&pad, &tft);
         if (!tft.asyncUpdateActive()) {
             tft.updateScreenAsync();
         }

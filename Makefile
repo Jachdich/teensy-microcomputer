@@ -142,9 +142,9 @@ $(TARGET).elf: $(OBJS) $(MCU_LD)
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 ifneq (,$(wildcard $(TOOLSPATH)))
-	$(TOOLSPATH)/teensy_post_compile -file=$(basename $@) -path=$(shell pwd) -tools=$(TOOLSPATH)
-	#teensy_loader_cli --mcu=TEENSY41 -w $(TARGET).hex
-	#-$(TOOLSPATH)/teensy_reboot
+	# $(TOOLSPATH)/teensy_post_compile -file=$(basename $@) -path=$(shell pwd) -tools=$(TOOLSPATH)
+	teensy_loader_cli --mcu=TEENSY41 -w $(TARGET).hex
+	$(TOOLSPATH)/teensy_reboot
 endif
 
 # compiler generated dependency info
