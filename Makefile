@@ -37,7 +37,8 @@ TARGET = main
 #/tmp/arduino_build_224829/sketch/Blink2.ino.cpp -o /dev/null -DARDUINO_LIB_DISCOVERY_PHASE
 
 # configurable options
-OPTIONS = -DF_CPU=150000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
+# OPTIONS = -DF_CPU=150000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
+OPTIONS = -DF_CPU=600 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
 
 # options needed by many Arduino libraries to configure for Teensy 4.0
 OPTIONS += -D__$(MCU)__ -DARDUINO=10813 -DTEENSYDUINO=153 -DARDUINO_TEENSY41
@@ -136,6 +137,7 @@ obj/libs/%.o: src/libs/%.c
 all: $(TARGET).hex
 
 $(TARGET).elf: $(OBJS) $(MCU_LD)
+	@echo $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 %.hex: %.elf

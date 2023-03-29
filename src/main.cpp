@@ -267,7 +267,7 @@ int main() {
     memset(&pad, 0, sizeof(pad));
     cmd_string[0] = 0;
     pinMode(7, OUTPUT);
-    analogWrite(7, 255);
+    analogWrite(7, 0);
     tft.init(240, 240);
     setup_keypad();
     prompt();
@@ -280,11 +280,11 @@ int main() {
 
     while (true) {
 
-        // read_keypad(&pad);
+        read_keypad(&pad);
 
-        // read_keyboard(&pad);
-        // draw();
-        minesweeper(&pad, &tft);
+        read_keyboard(&pad);
+        draw();
+        // minesweeper(&pad, &tft);
         if (!tft.asyncUpdateActive()) {
             tft.updateScreenAsync();
         }
