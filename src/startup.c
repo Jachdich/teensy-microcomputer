@@ -1,4 +1,4 @@
-#include "imxrt.h"
+#include "../include/libs/imxrt.h"
 
 extern unsigned long _stextload;
 extern unsigned long _stext;
@@ -13,6 +13,7 @@ extern unsigned long _estack;
 
 static void memory_copy(uint32_t *dest, const uint32_t *src, uint32_t *dest_end);
 static void memory_clear(uint32_t *dest, uint32_t *dest_end);
+uint32_t set_arm_clock(uint32_t frequency); // clockspeed.c
 
 void main();
 
@@ -32,6 +33,10 @@ void startup()
 
     // enable FPU
     // SCB_CPACR = 0x00F00000;
+
+#ifdef F_CPU
+    set_arm_clock(F_CPU);
+#endif
 
     // Call the `main()` function defined in `main.c`.
     main();
