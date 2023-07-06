@@ -264,7 +264,9 @@ void read_keyboard(Keypad *pad) {
     inChar(in);
 }
 
+extern "C" { void audio_test(void); }
 int main() {
+    audio_test();
     memset(&pad, 0, sizeof(pad));
     cmd_string[0] = 0;
     pinMode(TFT_BL, OUTPUT);
