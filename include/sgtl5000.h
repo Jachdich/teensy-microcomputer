@@ -344,7 +344,8 @@
 //				After setting to the nominal voltage, this field can be used
 //				to adjust the output level in +/-0.5 dB increments by using
 //				values higher or lower than the nominal setting.
-#define CHIP_ANA_POWER			0x0030 // power down controls for the analog blocks.
+#define CHIP_ANA_POWER			0x0030
+	  // power down controls for the analog blocks.
 		// The only other power-down controls are BIAS_RESISTOR in the MIC_CTRL register
 		//  and the EN_ZCD control bits in ANA_CTRL.
 #define ANA_POWER_DAC_MONO                  (1 << 14)

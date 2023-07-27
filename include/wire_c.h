@@ -7,8 +7,8 @@ extern "C" {
 #endif
 void Wire_begin(uint8_t addr);
 void Wire_begin_transmission(uint8_t addr);
-void Wire_write(int data);
-int Wire_read();
+void Wire_write(uint8_t data);
+uint8_t Wire_read();
 #ifdef __cplusplus
 }
 #endif
