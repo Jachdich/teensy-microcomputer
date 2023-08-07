@@ -11,7 +11,7 @@
 // 4	DAP_POWERUP	1=Enable, 0=disable the DAP block
 #define DIG_POWER_I2S_OUT (1 << 1)
 // 1	I2S_OUT_POWERUP	1=Enable, 0=disable the I2S data output
-#define DIG_POWER_I2C_IN (1 << 0)
+#define DIG_POWER_I2S_IN (1 << 0)
 // 0	I2S_IN_POWERUP	1=Enable, 0=disable the I2S data input
 
 #define CHIP_CLK_CTRL			0x0004
@@ -236,9 +236,12 @@
 // 0	MUTE_ADC	Mute the ADC analog volume, 0 = Unmute, 1 = Mute (default)
 
 #define CHIP_LINREG_CTRL		0x0026
+#define LINREG_VDDC_FROM_VDDIO (1 << 6)
+#define LINREG_VDDC_FROM_VDDA (0)
 // 6	VDDC_MAN_ASSN	Determines chargepump source when VDDC_ASSN_OVRD is set.
 //				0x0 = VDDA
 //				0x1 = VDDIO
+#define LINREG_VDDC_SOURCE_OVERRIDE (1 << 5)
 // 5	VDDC_ASSN_OVRD	Charge pump Source Assignment Override
 //				0x0 = Charge pump source is automatically assigned based
 //					on higher of VDDA and VDDIO
@@ -247,6 +250,7 @@
 //					and greater than 3.1 V, VDDC_ASSN_OVRD and
 //					VDDC_MAN_ASSN should be used to manually assign
 //					VDDIO as the source for charge pump.
+#define LINREG_VDDC_VOLTAGE(bits) (bits)
 // 3:0	D_PROGRAMMING	Sets the VDDD linear regulator output voltage in 50 mV steps.
 //			Must clear the LINREG_SIMPLE_POWERUP and STARTUP_POWERUP bits
 //			in the 0x0030 (CHIP_ANA_POWER) register after power-up, for
@@ -255,6 +259,7 @@
 //				0xF = 0.85
 
 #define CHIP_REF_CTRL			0x0028 // bandgap reference bias voltage and currents
+#define REF_VAG_VOLTAGE(bits) (bits << 4)
 // 8:4	VAG_VAL		Analog Ground Voltage Control
 //				These bits control the analog ground voltage in 25 mV steps.
 //				This should usually be set to VDDA/2 or lower for best
@@ -264,6 +269,7 @@
 //				and the output signal of the ADC.
 //				0x00 = 0.800 V
 //				0x1F = 1.575 V
+#define REF_BIAS_CTRL(bits) (bits << 1)
 // 3:1	BIAS_CTRL	Bias control
 //				These bits adjust the bias currents for all of the analog
 //				blocks. By lowering the bias current a lower quiescent power
@@ -275,6 +281,7 @@
 //				0x5=-25%
 //				0x6=-37.5%
 //				0x7=-50%
+#define REF_SMALL_POP (1 << 0)
 // 0	SMALL_POP	VAG Ramp Control
 //				Setting this bit slows down the VAG ramp from ~200 to ~400 ms
 //				to reduce the startup pop, but increases the turn on/off time.
@@ -307,6 +314,7 @@
 //				0x3 = +40 dB
 
 #define CHIP_LINE_OUT_CTRL		0x002C
+#define LINE_OUT_CTRL_OUT_CURRENT(bits) (bits << 8)
 // 11:8	OUT_CURRENT	Controls the output bias current for the LINEOUT amplifiers.  The
 //			nominal recommended setting for a 10 kohm load with 1.0 nF load cap
 //			is 0x3. There are only 5 valid settings.
@@ -315,6 +323,7 @@
 //				0x3=0.36 mA
 //				0x7=0.45 mA
 //				0xF=0.54 mA
+#define LINE_OUT_CTRL_VAG_VOLTAGE(bits) (bits)
 // 5:0	LO_VAGCNTRL	LINEOUT Amplifier Analog Ground Voltage
 //				Controls the analog ground voltage for the LINEOUT amplifiers
 //				in 25 mV steps. This should usually be set to VDDIO/2.
@@ -437,6 +446,9 @@
 #define CHIP_ANA_TEST2			0x003A //  intended only for debug.
 
 #define CHIP_SHORT_CTRL			0x003C
+// set both left and right channels to the same value (most common)
+#define SHORT_CTRL_HP_BOTH(bits) ((bits << 12) | (bits << 8))
+#define SHORT_CTRL_HP_RIGHT(bits) (bits << 12)
 // 14:12 LVLADJR	Right channel headphone	short detector in 25 mA steps.
 //				0x3=25 mA
 //				0x2=50 mA
@@ -450,8 +462,10 @@
 //				of guard band to avoid false trips.  This short detect trip
 //				point is also effected by the bias current adjustments made
 //				by CHIP_REF_CTRL->BIAS_CTRL and by CHIP_ANA_TEST1->HP_IALL_ADJ.
+#define SHORT_CTRL_HP_LEFT(bits) (bits << 8)
 // 10:8	LVLADJL		Left channel headphone short detector in 25 mA steps.
 //				(same scale as LVLADJR)
+#define SHORT_CTRL_HP_CENTRE(bits) (bits << 4)
 // 6:4	LVLADJC		Capless headphone center channel short detector in 50 mA steps.
 //				0x3=50 mA
 //				0x2=100 mA
@@ -461,16 +475,23 @@
 //				0x5=300 mA
 //				0x6=350 mA
 //				0x7=400 mA
+#define SHORT_CTRL_MODE_LR_DISABLE (0x0 << 2)
+#define SHORT_CTRL_MODE_LR_AUTO_RESET_TIMEOUT (0x1 << 2)
+#define SHORT_CTRL_MODE_LR_MANUAL_RESET (0x3 << 2)
 // 3:2	MODE_LR		Behavior of left/right short detection
-//				0x0 = Disable short detector, reset short detect latch,
-//					software view non-latched short signal
-//				0x1 = Enable short detector and reset the latch at timeout
-//					(every ~50 ms)
+//				0x0 = Disable short detector, reset short detect latch, software view non-latched short signal
+//				0x1 = Enable short detector and reset the latch at timeout (every ~50 ms)
 //				0x2 = This mode is not used/invalid
-//				0x3 = Enable short detector with only manual reset (have
-//					to return to 0x0 to reset the latch)
+//				0x3 = Enable short detector with only manual reset (have to return to 0x0 to reset the latch)
+#define SHORT_CTRL_MODE_CAPLESS_DISABLE (0x0 << 0)
+#define SHORT_CTRL_MODE_CAPLESS_AUTO_RESET_TIMEOUT (0x1 << 0)
+#define SHORT_CTRL_MODE_CAPLESS_AUTO_RESET_VOLTAGE (0x2 << 0)
+#define SHORT_CTRL_MODE_CAPLESS_MANUAL_RESET (0x3 << 0)
 // 1:0	MODE_CM		Behavior of capless headphone central short detection
-//				(same settings as MODE_LR)
+//				0x0 = Disable short detector, reset short detect latch, software view non-latched short signal
+//				0x1 = Enable short detector and reset the latch at timeout (every ~50 ms)
+//				0x2 = Enable short detector and auto reset when output voltage rises (preferred mode)
+//				0x3 = Enable short detector with only manual reset (have to return to 0x0 to reset the latch)
 
 #define DAP_CONTROL			0x0100
 #define DAP_PEQ				0x0102
