@@ -14,9 +14,10 @@ void drawMainMenu() {
 
 #define TFT_MOSI  11
 #define TFT_SCK   13
-#define TFT_DC   37
-#define TFT_CS   10
-#define TFT_RST  8
+#define TFT_DC    37
+#define TFT_CS    10
+#define TFT_RST   8
+#define TFT_BL    3
 ST7789_t3 tft = ST7789_t3(TFT_CS, TFT_DC, TFT_RST);
 
 // asm(".global pogger\npogger: .incbin \"limine.sys\"\n");
@@ -197,7 +198,7 @@ void do_command(char * n) {
             if (b < 1 || b > 255) {
                 print("Error: invalid brightness value. Must be int, 0 < brightness < 256\n");
             } else {
-                analogWrite(7, b);
+                analogWrite(TFT_BL, b);
             }
         }
     } else if (strcmp(argv[0], "kb") == 0) {
@@ -263,14 +264,16 @@ void read_keyboard(Keypad *pad) {
     inChar(in);
 }
 
+extern "C" { void audio_test(void); }
 int main() {
+    // audio_test();
     // memset(&pad, 0, sizeof(pad));
     // cmd_string[0] = 0;
-    // pinMode(3, OUTPUT);
     // pinMode(A10, INPUT);
     pinMode(13, OUTPUT);
     digitalWrite(13, 0);
-    // analogWrite(3, 100);
+    // pinMode(TFT_BL, OUTPUT);
+    // analogWrite(TFT_BL, 0);
     // tft.init(240, 240);
     // setup_keypad();
     // prompt();
