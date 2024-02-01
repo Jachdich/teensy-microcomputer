@@ -264,30 +264,52 @@ void read_keyboard(Keypad *pad) {
 }
 
 int main() {
-    memset(&pad, 0, sizeof(pad));
-    cmd_string[0] = 0;
-    pinMode(7, OUTPUT);
-    analogWrite(7, 0);
-    tft.init(240, 240);
-    setup_keypad();
-    prompt();
+    // memset(&pad, 0, sizeof(pad));
+    // cmd_string[0] = 0;
+    // pinMode(3, OUTPUT);
+    // pinMode(A10, INPUT);
+    pinMode(13, OUTPUT);
+    digitalWrite(13, 0);
+    // analogWrite(3, 100);
+    // tft.init(240, 240);
+    // setup_keypad();
+    // prompt();
 
-    tft.setRotation(2);
-    tft.setTextWrap(false);
-    tft.setTextSize(1);
-    tft.setTextColor(ST7735_WHITE);
-    tft.useFrameBuffer(true);
+    // tft.setRotation(2);
+    // tft.setTextWrap(false);
+    // tft.setTextSize(1);
+    // tft.setTextColor(ST7735_WHITE);
+    // tft.useFrameBuffer(true);
 
     while (true) {
-
-        read_keypad(&pad);
-
-        read_keyboard(&pad);
-        draw();
-        // minesweeper(&pad, &tft);
-        if (!tft.asyncUpdateActive()) {
-            tft.updateScreenAsync();
+        int reading = analogRead(A10);
+        if (reading < 1000) {
+            digitalWrite(13, 1);
+        } else {
+            digitalWrite(13, 0);
         }
+
+        // read_keypad(&pad);
+
+        // read_keyboard(&pad);
+        // int reading = analogRead(A10);
+        // int c0 = reading % 10 + '0';
+        // reading /= 10;
+        // int c1 = reading % 10 + '0';
+        // reading /= 10;
+        // int c2 = reading % 10 + '0';
+        // reading /= 10;
+        // int c3 = reading % 10 + '0';
+        // reading /= 10;
+        // print(c3);
+        // print(c2);
+        // print(c1);
+        // print(c0);
+        // print('\n');
+        // draw();
+        // if (!tft.asyncUpdateActive()) {
+        //     tft.updateScreenAsync();
+        // }
         // tft.waitUpdateAsyncComplete();
 /*
         currScreenPos = 0;
@@ -310,5 +332,13 @@ int main() {
 //     setup();
 //     while (1) {
 //         loop();
+//     }
+// }
+// int main() {
+//     pinMode(A10, INPUT);
+//     Serial.begin(9600);
+//     while (!Serial);
+//     while (true) {
+//         Serial.println(analogRead(A10));
 //     }
 // }
