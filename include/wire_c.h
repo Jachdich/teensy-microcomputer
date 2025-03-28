@@ -1,6 +1,5 @@
 #ifndef _WIRE_C_H
 #define _WIRE_C_H
-#include "../include/libs/Wire.h"
 #include <stdint.h>
 #include <stdbool.h>
 #ifdef __cplusplus

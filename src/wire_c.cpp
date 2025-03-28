@@ -21,6 +21,6 @@ uint8_t Wire_read() {
 		return Wire.read();
 }
 
-uint8_t Wire_request_from(uint8_t address, uint8_t quantity, bool send_stop) {
+uint8_t Wire_request_from(uint8_t address, uint8_t quantity, uint8_t send_stop) {
 		return Wire.requestFrom(address, quantity, send_stop);
 }
